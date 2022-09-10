@@ -29,5 +29,5 @@ let
 for (counter, path) in sortedPathsWithCounter:
   let
     pathEpub = try: walkFiles(path / "*" & extDotEpub).toSeq[0] except: continue
-    nameEpubWithoutExt = pathEpub.extractFilename.changeFileExt("")
-  pathEpub.copyFile(cwd / $counter & "_" & nameEpubWithoutExt & extDotEpub)
+    nameEpub = pathEpub.extractFilename
+  pathEpub.copyFile(cwd / $counter & "_" & nameEpub)
