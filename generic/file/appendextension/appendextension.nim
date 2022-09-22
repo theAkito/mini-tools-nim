@@ -21,7 +21,7 @@ let
   extNext = prefixDot & params[2]
 
 walkFiles(dir / extCurrent).toSeq.apply(
-  (fileName: string) => (
-    fileName.moveFile(fileName & extNext)
+  (filePath: string) => (
+    filePath.moveFile(filePath & extNext)
   )
 )
