@@ -5,6 +5,7 @@ from urlly import parseUrl
 
 const
   debug             * {.booldefine.} = false
+  debugDir          * {.strdefine.}  = "debug"
   defaultMsg        * {.strdefine.}  = "Process Finished"
   defaultDateFormat * {.strdefine.}  = "yyyy-MM-dd'T'HH:mm:ss'.'fffffffff'+02:00'"
   logMsgPrefix      * {.strdefine.}  = "[$levelname]:[$datetime]"

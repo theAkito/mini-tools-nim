@@ -57,7 +57,7 @@ proc extractProjectContext(node: XmlNode): JsonNode =
     txtScriptSubEnd = txtScript.find("""},
                 userContext:""")
     txtScriptSubContent = txtScript[txtScriptSubStart.succ(txtScriptSubStartFragment.len.pred)..txtScriptSubEnd]
-  writeFile "debug" / &"""extractProjectContextTxtScriptSubContent_{now().format("yyyy-MM-dd'T'HH-mm-ss")}.json""", txtScriptSubContent.parseJson.pretty
+  when meta.debug: writeFile debugDir / &"""extractProjectContextTxtScriptSubContent_{now().format("yyyy-MM-dd'T'HH-mm-ss")}.json""", txtScriptSubContent.parseJson.pretty
   txtScriptSubContent.parseJson
 
 proc extractProjectCommentsBox(node: XmlNode): JsonNode =
@@ -70,7 +70,7 @@ proc extractProjectCommentsBox(node: XmlNode): JsonNode =
     txtScriptSubStart = txtScript.find(txtScriptSubStartFragment)
     txtScriptSubEnd = txtScript.find(""");""", start = txtScriptSubStart)
     txtScriptSubContent = txtScript[txtScriptSubStart.succ(txtScriptSubStartFragment.len.pred)..txtScriptSubEnd.pred]
-  writeFile "debug" / &"""extractProjectCommentsBoxTxtScriptSubContent_{now().format("yyyy-MM-dd'T'HH-mm-ss")}.json""", txtScriptSubContent.parseJson.pretty
+  when meta.debug: writeFile debugDir / &"""extractProjectCommentsBoxTxtScriptSubContent_{now().format("yyyy-MM-dd'T'HH-mm-ss")}.json""", txtScriptSubContent.parseJson.pretty
   txtScriptSubContent.parseJson
 
 proc retrieveProjectContext(projectUrl: Url): XmlNode =
@@ -174,6 +174,7 @@ iterator retrieveComments(rawProjectUrl: string = "https://gamefound.com/project
 #TODO: Add feature to query/group comments by nickname.
 block:
   discard outputDir.existsOrCreateDir
+  when meta.debug: debugDir.existsOrCreateDir
   case selectedOutputType:
     of jsonSingle:
       writeFile(outputDir / &"""out_jsonSingle_{now().format("yyyy-MM-dd'T'HH-mm-ss")}.json""", pretty(% retrieveComments()))
