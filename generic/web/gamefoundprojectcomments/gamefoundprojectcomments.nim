@@ -91,7 +91,7 @@ proc retrieveCommentBatchAsJSON(projectUrl: Url = "https://gamefound.com/project
     # projectUrl = rawProjectUrl.parseUrl.cleanURL
     headerValContentType = "application/json"
     req = Request(
-      url: apiGetProjectComments,
+      url: apiGetComments,
       headers: @[
         Header(key: headerKeyUserAgent, value: headerUserAgent),
         Header(key: "Accept", value: headerValContentType),
@@ -175,12 +175,13 @@ iterator retrieveComments(rawProjectUrl: string = "https://gamefound.com/project
 block:
   discard outputDir.existsOrCreateDir
   when meta.debug: debugDir.existsOrCreateDir
+  let currentDate = now().format(dateFormatFileName)
   case selectedOutputType:
     of jsonSingle:
-      writeFile(outputDir / &"""out_jsonSingle_{now().format("yyyy-MM-dd'T'HH-mm-ss")}.json""", pretty(% retrieveComments()))
+      writeFile(outputDir / &"""out_jsonSingle_{currentDate}.json""", pretty(% retrieveComments()))
     of jsonStream:
       let
-        fileLog = newFileStream(outputDir / &"""out_jsonStream_{now().format("yyyy-MM-dd'T'HH-mm-ss")}.json""", fmReadWrite)
+        fileLog = newFileStream(outputDir / &"""out_jsonStream_{currentDate}.json""", fmReadWrite)
       for comments in retrieveComments(gamefoundProjectURL):
         comments.apply(
           (it: CommentResponseItem) =>
