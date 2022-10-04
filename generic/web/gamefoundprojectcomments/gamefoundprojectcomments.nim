@@ -180,10 +180,9 @@ block:
     of jsonSingle:
       writeFile(outputDir / &"""out_jsonSingle_{currentDate}.json""", pretty(% retrieveComments()))
     of jsonStream:
-      let
-        fileLog = newFileStream(outputDir / &"""out_jsonStream_{currentDate}.json""", fmReadWrite)
+      let jStream = newFileStream(outputDir / &"""out_jsonStream_{currentDate}.json""", fmWrite)
       for comments in retrieveComments(gamefoundProjectURL):
         comments.apply(
           (it: CommentResponseItem) =>
-            fileLog.writeLine(%(it))
+            jStream.writeLine(%(it))
         )
