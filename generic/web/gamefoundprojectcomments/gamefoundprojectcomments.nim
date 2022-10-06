@@ -88,7 +88,6 @@ proc retrieveProjectContext(projectUrl: Url): XmlNode =
 
 proc retrieveCommentBatchAsJSON(projectUrl: Url = "https://gamefound.com/projects/boardcubator/kcdboardgame".parseUrl, commentThreadID: int, lastFetchedCommentID: int = 0): JsonNode =
   let
-    # projectUrl = rawProjectUrl.parseUrl.cleanURL
     headerValContentType = "application/json"
     req = Request(
       url: apiGetComments,
@@ -96,8 +95,7 @@ proc retrieveCommentBatchAsJSON(projectUrl: Url = "https://gamefound.com/project
         Header(key: headerKeyUserAgent, value: headerUserAgent),
         Header(key: "Accept", value: headerValContentType),
         Header(key: "Content-Type", value: headerValContentType),
-        Header(key: "Referer", value: projectUrl.toCommentsUrl),
-        # Header(key: headerKeyCookie, value: headerCookie)
+        Header(key: "Referer", value: projectUrl.toCommentsUrl)
       ],
       verb: "POST",
       body: $ %* CommentRequest(
@@ -154,7 +152,6 @@ iterator retrieveComments(rawProjectUrl: string = "https://gamefound.com/project
   var
     lastFetchedCommentID = lastFetchedCommentIDinit
     count = 1
-  # result = newSeqOfCap[CommentResponseItem](batchTotalItemCount)
   yield batchFirst.pagedItems
   while count < batchTotalItemCount:
     if count != 1: wait()

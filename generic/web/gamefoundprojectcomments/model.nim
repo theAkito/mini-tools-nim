@@ -18,23 +18,6 @@ type
     userID*: int
     nickname*: string
     avatarUrl*: string
-  # CommentResponseItem* = object
-  #   projectCommentID*: int
-  #   author: CommentResponseAuthor
-  #   authorID*: int
-  #   authorType*: int
-  #   createdAt*: string # Date
-  #   editedAt*: JsonNode # Date
-  #   isDeleted*: bool
-  #   isHidden*: bool
-  #   likesCount*: JsonNode
-  #   newRepliesCount*: JsonNode
-  #   parentID*: JsonNode
-  #   pinnedAt*: JsonNode # Date
-  #   projectID*: JsonNode
-  #   projectUpdateID*: string
-  #   text*: string
-  #   userProjectComment*: string
   CommentResponseUserComment* = object
     commentID*: int
     userCommentID*: int
