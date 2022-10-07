@@ -10,8 +10,6 @@ type
     lastFetchedCommentID*: JsonNode # int
     lastPinnedAt*: JsonNode # string
     lastScore*: int
-    projectID*: int
-    projectUpdateID*: JsonNode # int
     sortType*: int # 0
     tag*: JsonNode
   CommentResponseAuthor* = object

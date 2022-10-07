@@ -100,7 +100,6 @@ proc retrieveCommentBatchAsJSON(projectUrl: Url = "https://gamefound.com/project
       verb: "POST",
       body: $ %* CommentRequest(
         commentThreadID: commentThreadID,
-        projectID: projectUrl.retrieveProjectContext.extractProjectContext.getProjectID,
         lastFetchedCommentID: if lastFetchedCommentID == 0: newJNull() else: % lastFetchedCommentID,
         sortType: 0,
         lastScore: 0
