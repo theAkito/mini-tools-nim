@@ -125,14 +125,19 @@ proc retrieveComments(rawProjectUrl: string = "https://gamefound.com/projects/bo
   let
     projectUrl = rawProjectUrl.parseUrl.cleanURL
     commentThreadID = projectUrl.toCommentsUrl.parseUrl.retrieveProjectContext.extractProjectCommentsBox.getCommentThreadID
-    (lastFetchedCommentIDinit, batchFirst) = retrieveCommentBatchAsJSON(commentThreadID = commentThreadID).getLastFetchedCommentIDToCommentResponse()
+    (lastFetchedCommentIDinit, batchFirst) =
+      retrieveCommentBatchAsJSON(commentThreadID = commentThreadID)
+        .getLastFetchedCommentIDToCommentResponse()
     batchTotalItemCount = batchFirst.totalItemCount
   var lastFetchedCommentID = lastFetchedCommentIDinit
   result = newSeqOfCap[CommentResponseItem](batchTotalItemCount)
+  result.add batchFirst.pagedItems
   while result.len < batchTotalItemCount:
     wait()
     try:
-      let (lastFetchedCommentIDcurrent, batchCurrent) = retrieveCommentBatchAsJSON(commentThreadID = commentThreadID, lastFetchedCommentID = lastFetchedCommentID).getLastFetchedCommentIDToCommentResponse()
+      let (lastFetchedCommentIDcurrent, batchCurrent) =
+        retrieveCommentBatchAsJSON(commentThreadID = commentThreadID, lastFetchedCommentID = lastFetchedCommentID)
+          .getLastFetchedCommentIDToCommentResponse()
       if lastFetchedCommentIDcurrent == 0: break
       lastFetchedCommentID = lastFetchedCommentIDcurrent
       result.add batchCurrent.pagedItems
@@ -146,16 +151,20 @@ iterator retrieveComments(rawProjectUrl: string = "https://gamefound.com/project
   let
     projectUrl = rawProjectUrl.parseUrl.cleanURL
     commentThreadID = projectUrl.toCommentsUrl.parseUrl.retrieveProjectContext.extractProjectCommentsBox.getCommentThreadID
-    (lastFetchedCommentIDinit, batchFirst) = retrieveCommentBatchAsJSON(projectUrl, commentThreadID = commentThreadID).getLastFetchedCommentIDToCommentResponse()
+    (lastFetchedCommentIDinit, batchFirst) =
+      retrieveCommentBatchAsJSON(projectUrl, commentThreadID = commentThreadID)
+        .getLastFetchedCommentIDToCommentResponse()
     batchTotalItemCount = batchFirst.totalItemCount
   var
     lastFetchedCommentID = lastFetchedCommentIDinit
     count = 1
   yield batchFirst.pagedItems
-  while count < batchTotalItemCount:
-    if count != 1: wait()
+  while count <= ((batchTotalItemCount div 20) + ((batchTotalItemCount mod 20) div 20)):
+    wait()
     try:
-      let (lastFetchedCommentIDcurrent, batchCurrent) = retrieveCommentBatchAsJSON(commentThreadID = commentThreadID, lastFetchedCommentID = lastFetchedCommentID).getLastFetchedCommentIDToCommentResponse()
+      let (lastFetchedCommentIDcurrent, batchCurrent) =
+        retrieveCommentBatchAsJSON(commentThreadID = commentThreadID, lastFetchedCommentID = lastFetchedCommentID)
+          .getLastFetchedCommentIDToCommentResponse()
       if lastFetchedCommentIDcurrent == 0: break
       lastFetchedCommentID = lastFetchedCommentIDcurrent
       yield batchCurrent.pagedItems
@@ -168,17 +177,24 @@ iterator retrieveComments(rawProjectUrl: string = "https://gamefound.com/project
 
 #TODO: Add Stopwatch.
 #TODO: Add feature to query/group comments by nickname.
+#TODO: Add feature to continue from last checkpoint.
 block:
   discard outputDir.existsOrCreateDir
-  when meta.debug: debugDir.existsOrCreateDir
-  let currentDate = now().format(dateFormatFileName)
+  when meta.debug: discard debugDir.existsOrCreateDir
+  let
+    currentDate = now().format(dateFormatFileName)
+    outputFileName = outputDir / &"""out_{selectedOutputType}_{currentDate}.json"""
   case selectedOutputType:
     of jsonSingle:
-      writeFile(outputDir / &"""out_jsonSingle_{currentDate}.json""", pretty(% retrieveComments()))
+      writeFile(outputFileName, pretty(% retrieveComments()))
     of jsonStream:
-      let jStream = newFileStream(outputDir / &"""out_jsonStream_{currentDate}.json""", fmWrite)
+      let jStream = newFileStream(outputFileName, fmWrite)
       for comments in retrieveComments(gamefoundProjectURL):
         comments.apply(
           (it: CommentResponseItem) =>
             jStream.writeLine(%(it))
         )
+  let outputFile = outputFileName.open
+  defer: outputFile.close
+  if outputFile.getFileSize == 0:
+    discard outputFileName.tryRemoveFile
