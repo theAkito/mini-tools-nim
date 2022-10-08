@@ -23,6 +23,8 @@ import
 
 randomize()
 
+const maxCountBatch = 20
+
 let logger = newConsoleLogger(defineLogLevel(), logMsgPrefix & logMsgInter & "master" & logMsgSuffix)
 
 func first*(s: openArray[XmlNode], pred: proc(x: XmlNode): bool {.closure.}): XmlNode {.inline, effectsOf: pred.} =
@@ -138,7 +140,7 @@ proc retrieveComments(rawProjectUrl: string = "https://gamefound.com/projects/bo
       let (lastFetchedCommentIDcurrent, batchCurrent) =
         retrieveCommentBatchAsJSON(commentThreadID = commentThreadID, lastFetchedCommentID = lastFetchedCommentID)
           .getLastFetchedCommentIDToCommentResponse()
-      if lastFetchedCommentIDcurrent == 0: break
+      if lastFetchedCommentIDcurrent == 0: break # Fallback, in case item count is incorrect.
       lastFetchedCommentID = lastFetchedCommentIDcurrent
       result.add batchCurrent.pagedItems
     except:
@@ -159,13 +161,13 @@ iterator retrieveComments(rawProjectUrl: string = "https://gamefound.com/project
     lastFetchedCommentID = lastFetchedCommentIDinit
     count = 1
   yield batchFirst.pagedItems
-  while count <= ((batchTotalItemCount div 20) + ((batchTotalItemCount mod 20) div 20)):
+  while count <= ((batchTotalItemCount div maxCountBatch) + ((batchTotalItemCount mod maxCountBatch) div maxCountBatch)):
     wait()
     try:
       let (lastFetchedCommentIDcurrent, batchCurrent) =
         retrieveCommentBatchAsJSON(commentThreadID = commentThreadID, lastFetchedCommentID = lastFetchedCommentID)
           .getLastFetchedCommentIDToCommentResponse()
-      if lastFetchedCommentIDcurrent == 0: break
+      if lastFetchedCommentIDcurrent == 0: break # Fallback, in case item count is incorrect.
       lastFetchedCommentID = lastFetchedCommentIDcurrent
       yield batchCurrent.pagedItems
       count.inc
@@ -190,10 +192,7 @@ block:
     of jsonStream:
       let jStream = newFileStream(outputFileName, fmWrite)
       for comments in retrieveComments(gamefoundProjectURL):
-        comments.apply(
-          (it: CommentResponseItem) =>
-            jStream.writeLine(%(it))
-        )
+        comments.apply (it: CommentResponseItem) => jStream.writeLine(% it)
   let outputFile = outputFileName.open
   defer: outputFile.close
   if outputFile.getFileSize == 0:
