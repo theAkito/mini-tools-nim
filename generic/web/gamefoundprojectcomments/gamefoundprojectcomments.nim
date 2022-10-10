@@ -119,7 +119,7 @@ proc getLastFetchedCommentIDToCommentResponse(batch: JsonNode): (int, CommentRes
       except:
         logger.log lvlDebug, pretty(% response)
         logger.log lvlDebug, getCurrentExceptionMsg()
-        logger.log lvlDebug, getStackTrace()
+        logger.log lvlDebug, getCurrentException().getStackTrace()
         0
   (lastFetchedCommentID, response)
 
@@ -146,7 +146,7 @@ proc retrieveComments(rawProjectUrl: string = "https://gamefound.com/projects/bo
     except:
       logger.log lvlWarn,  """Exception occurred when trying to retrieve comments. Waiting and then trying again..."""
       logger.log lvlWarn,  """Exception Message: """ & getCurrentExceptionMsg()
-      logger.log lvlDebug, """Stacktrace: """ & getStackTrace()
+      logger.log lvlDebug, """Stacktrace: """ & getCurrentException().getStackTrace()
       waitLong()
 
 iterator retrieveComments(rawProjectUrl: string = "https://gamefound.com/projects/boardcubator/kcdboardgame"): seq[CommentResponseItem] =
@@ -174,7 +174,7 @@ iterator retrieveComments(rawProjectUrl: string = "https://gamefound.com/project
     except:
       logger.log lvlWarn,  """Exception occurred when trying to retrieve comments. Waiting and then trying again..."""
       logger.log lvlWarn,  """Exception Message: """ & getCurrentExceptionMsg()
-      logger.log lvlDebug, """Stacktrace: """ & getStackTrace()
+      logger.log lvlDebug, """Stacktrace: """ & getCurrentException().getStackTrace()
       waitLong()
 
 #TODO: Add Stopwatch.
