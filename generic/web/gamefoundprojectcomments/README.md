@@ -10,7 +10,7 @@ nim c gamefoundprojectcomments.nim
 #### Provide Gamefound link to a project
 ```bash
 ./gamefoundprojectcomments 'https://gamefound.com/projects/boardcubator/kcdboardgame' "jsonSingle" # Output single JSON object with an array containing all comments.
-./gamefoundprojectcomments 'https://gamefound.com/projects/boardcubator/kcdboardgame' "jsonStream" # Output a stream of JSON objects, one per line, each containing a batch of up to 10 comments.
+./gamefoundprojectcomments 'https://gamefound.com/projects/boardcubator/kcdboardgame' "jsonStream" # Output a stream of JSON objects, one per line, each containing a single comment, plus children, if any are available.
 ```
 
 ### Output
