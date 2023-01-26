@@ -83,6 +83,7 @@ when isMainModule:
   let
     currentDate = now().format(dateFormatFileName)
     outputFileName = outputDir / &"""out_{currentDate}.json"""
-    outTxt = pretty %retrieveChannelTagToLive(configName.readLines(3).mapIt(it)).toSeq.toTable
+    inputTxt = inputFilePath.readFile
+    outTxt = pretty %retrieveChannelTagToLive(inputTxt.splitLines.mapIt(it)).toSeq.toTable
   writeFile(outputFileName, outTxt)
   echo outTxt

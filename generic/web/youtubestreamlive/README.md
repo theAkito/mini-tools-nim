@@ -10,9 +10,9 @@ nim c youtubestreamlive.nim
 #### Create file which contains one YouTube Tag per Line
 ##### `tags.txt`
 ```txt
-@tag123
-@tag321
-@tag231
+@KlangKuenstler
+@HBzMusic
+@durdenhauer55
 ```
 
 ### Run
@@ -25,11 +25,8 @@ nim c youtubestreamlive.nim
 #### Output as JSON
 ```json
 {
-  "@tag123": true,
-  "@tag321": false,
-  "@tag231": false
+  "@KlangKuenstler": true,
+  "@HBzMusic": false,
+  "@durdenhauer55": false
 }
 ```
-
-### TODO
-* Push to Gotify
