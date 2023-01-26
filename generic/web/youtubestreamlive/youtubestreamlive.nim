@@ -29,12 +29,12 @@ import
 randomize()
 
 const
-  headerCookie     = "CONSENT=PENDING+634;"
-  keywordLink      = "link"
-  keywordRel       = "rel"
-  keywordHref      = "href"
-  keywordCanonical = "canonical"
-  keywordWatch     = "/watch?v="
+  headerCookie     = "CONSENT=PENDING+634;" # YouTube Cookie Consent
+  keywordLink      = "link"                 # HTML
+  keywordRel       = "rel"                  # HTML
+  keywordHref      = "href"                 # HTML
+  keywordCanonical = "canonical"            # HTML
+  keywordWatch     = "/watch?v="            # URL
 
 let logger = newConsoleLogger(defineLogLevel(), logMsgPrefix & logMsgInter & "master" & logMsgSuffix)
 
@@ -45,6 +45,10 @@ func first*(s: openArray[XmlNode], pred: proc(x: XmlNode): bool {.closure.}): Xm
 
 func constructURL(tag: string): Url =
   parseUrl(&"""https://www.youtube.com/{tag}/live""")
+
+func isLive(nodeChannel: XmlNode): bool =
+  let canonicalLink = nodeChannel.findAll(keywordLink).first (nodeLink: XmlNode) => nodeLink.attrs.contains(keywordRel) and nodeLink.attr(keywordRel) == keywordCanonical
+  if canonicalLink != nil: canonicalLink.attr(keywordHref).contains(keywordWatch) else: false
 
 proc wait = sleep rand 2_231..5_121
 proc waitLong = (1..5).toSeq.apply (i: int) => wait()
@@ -63,17 +67,13 @@ proc retrieveYouTubeChannelAsXML(channelURL: Url): XmlNode =
     xResp = resp.body.parseHtml
   xResp
 
-func isLive(nodeChannel: XmlNode): bool =
-  let canonicalLink = nodeChannel.findAll(keywordLink).first (nodeLink: XmlNode) => nodeLink.attrs.contains(keywordRel) and nodeLink.attr(keywordRel) == keywordCanonical
-  if canonicalLink != nil: canonicalLink.attr(keywordHref).contains(keywordWatch) else: false
-
 iterator retrieveChannelTagToLive(tags = @["@KlangKuenstler"]): (string, bool) =
   for tag in tags:
     wait()
     try:
       yield (tag, tag.constructURL.retrieveYouTubeChannelAsXML.isLive)
     except:
-      logger.log lvlWarn,  """Exception occurred when trying to retrieve comments. Waiting and then trying again..."""
+      logger.log lvlWarn,  &"""Exception occurred when trying to retrieve channel of "{tag}". Waiting and then proceeding with next one..."""
       logger.log lvlWarn,  """Exception Message: """ & getCurrentExceptionMsg()
       logger.log lvlDebug, """Stacktrace: """ & getCurrentException().getStackTrace()
       waitLong()
@@ -84,6 +84,6 @@ when isMainModule:
     currentDate = now().format(dateFormatFileName)
     outputFileName = outputDir / &"""out_{currentDate}.json"""
     inputTxt = inputFilePath.readFile
-    outTxt = pretty %retrieveChannelTagToLive(inputTxt.splitLines.mapIt(it)).toSeq.toTable
+    outTxt = pretty %retrieveChannelTagToLive(inputTxt.splitLines).toSeq.toTable
   writeFile(outputFileName, outTxt)
   echo outTxt
