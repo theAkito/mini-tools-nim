@@ -1,0 +1,8 @@
+/wakapiexporter
+/output_wakapiexporter
+/out*
+/debug*
+/*copy*
+
+# LibreOffice
+.~lock.*
