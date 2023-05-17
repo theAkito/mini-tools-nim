@@ -29,6 +29,7 @@ type
     outputDirFileCSV: string
 
 const
+  lineEnd = "\p"
   docLink = "https://github.com/muety/wakapi/blob/1a6ee55d144574ef890d3de2825a9adac69a818e/scripts/download_heartbeats.py#L62-L69"
   outDir = "output_wakapiexporter/"
   dateFormat = "yyyy-MM-dd"
@@ -44,7 +45,9 @@ var
   )
 
 template throwHttpErrorIfNot20x =
-  if not resp.code < 300 and not resp.code >= 200: raise PuppyError.newException """Error: """ & resp.body
+  if resp.code notin 200..299: raise PuppyError.newException &"""HTTP Request returned non 20x HTTP Code with the following body:{lineEnd}""" & resp.body
+
+proc genHeaderAuth: HttpHeaders = @[("Authorization", "Basic " & args.apiKey.encode(true))]
 
 proc setOpts() =
   for kind, key, val in commandLineParams().getopt():
@@ -79,7 +82,7 @@ proc setOpts() =
       of cmdEnd: assert(false)
 
 proc fetchTotalRange(dateMin, dateMax: DateTime): tuple[min: DateTime, max: DateTime] =
-  let resp = get(&"{args.url}{urlSuffixAllTime}", @[("Authorization", "Basic " & args.apiKey.encode(true))])
+  let resp = get(&"{args.url}{urlSuffixAllTime}", genHeaderAuth())
   throwHttpErrorIfNot20x
   let
     jResp = try: resp.body.parseJson
@@ -96,7 +99,7 @@ proc fetchHeartbeats(date: DateTime): JsonNode =
       var url = parseUrl &"{args.url}{urlSuffixHeartbeats}"
       url.query["date"] = date.format(dateFormat)
       url
-    resp = get($url, @[("Authorization", "Basic " & args.apiKey.encode(true))])
+    resp = get($url, genHeaderAuth())
     jResp = try: resp.body.parseJson
     except CatchableError:
       echo resp.body
@@ -114,10 +117,7 @@ iterator fetchAllHeartbeats(dateStart, dateEnd: DateTime): JsonNode =
 proc run(dateFrom, dateTo: DateTime, outputLoc: string) =
   var csvOut = newCSVTblWriter(outputLoc, @modelKeys)
   let (dateMin, dateMax) = fetchTotalRange(dateFrom, dateTo)
-  # let fStream = outputLoc.newFileStream(fmWrite)
-  # defer: fStream.close
   for beats in dateMin.fetchAllHeartbeats(dateMax):
-    # echo pretty beats
     for beat in beats:
       let row = block:
         let row = newTable[string, string]()
@@ -140,8 +140,6 @@ proc run(dateFrom, dateTo: DateTime, outputLoc: string) =
 
 when isMainModule:
   setOpts()
-  let
-    headerAuth: HttpHeaders = @[("Authorization", "Basic " & args.apiKey.encode(true))]
-    currentDate = now().format("yyyy-MM-dd'T'HH-mm-ss")
+  let currentDate = now().format("yyyy-MM-dd'T'HH-mm-ss")
   discard args.outputDirFileCSV.existsOrCreateDir
   run(args.since, args.upto, args.outputDirFileCSV / &"""out_{currentDate}.csv""")
