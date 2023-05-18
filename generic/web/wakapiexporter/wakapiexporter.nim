@@ -47,6 +47,7 @@ var
 template throwHttpErrorIfNot20x =
   if resp.code notin 200..299: raise PuppyError.newException &"""HTTP Request returned non 20x HTTP Code with the following body:{lineEnd}""" & resp.body
 
+proc helpQuit = echo docLink; quit 1
 proc genHeaderAuth: HttpHeaders = @[("Authorization", "Basic " & args.apiKey.encode(true))]
 
 proc setOpts() =
@@ -69,16 +70,14 @@ proc setOpts() =
             try:
               args.since = val.parse(dateFormat)
             except ValueError:
-              echo docLink
-              quit 1
+              helpQuit()
           of "t", "to", "upto":
             try:
               args.upto = val.parse(dateFormat)
             except ValueError:
-              echo docLink
-              quit 1
+              helpQuit()
           of "h", "help":
-            echo docLink
+            helpQuit()
       of cmdEnd: assert(false)
   if args.url.isEmptyOrWhitespace: raiseOSError 22.OSErrorCode, "You need to provide a valid URL! Example: https://wakapi.dev"
   if args.apiKey.isEmptyOrWhitespace: raiseOSError 22.OSErrorCode, "You need to provide a valid API key! Example: 2ae7b097-959e-4dec-8921-e944d50bd554"
