@@ -17,7 +17,7 @@ import
   pkg/[
     puppy,
     csvtable,
-    # suru
+    suru
   ]
 
 type
@@ -113,7 +113,7 @@ iterator fetchAllHeartbeats(dateStart, dateEnd: DateTime): JsonNode =
   let dateRange = collect:
     for d in 0..(dateEnd - dateStart).inDays + 2:
       dateStart + initDuration(days = d)
-  for date in dateRange:
+  for date in suru(dateRange):
     yield date.fetchHeartBeats
 
 proc run(dateFrom, dateTo: DateTime, outputLoc: string) =
