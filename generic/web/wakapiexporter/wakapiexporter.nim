@@ -80,6 +80,8 @@ proc setOpts() =
           of "h", "help":
             echo docLink
       of cmdEnd: assert(false)
+  if args.url.isEmptyOrWhitespace: raiseOSError 22.OSErrorCode, "You need to provide a valid URL! Example: https://wakapi.dev"
+  if args.apiKey.isEmptyOrWhitespace: raiseOSError 22.OSErrorCode, "You need to provide a valid API key! Example: 2ae7b097-959e-4dec-8921-e944d50bd554"
 
 proc fetchTotalRange(dateMin, dateMax: DateTime): tuple[min: DateTime, max: DateTime] =
   let resp = get(&"{args.url}{urlSuffixAllTime}", genHeaderAuth())
@@ -135,8 +137,6 @@ proc run(dateFrom, dateTo: DateTime, outputLoc: string) =
         row["created_at"] = beat{"created_at"}.getStr
         row
       csvOut.writeRow(row)
-
-
 
 when isMainModule:
   setOpts()
