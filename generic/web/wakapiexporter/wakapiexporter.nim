@@ -8,11 +8,13 @@ import
     parseopt,
     strutils,
     strformat,
+    enumutils,
     times,
     os,
     base64,
     json,
-    sugar
+    sugar,
+    streams
   ],
   pkg/[
     puppy,
@@ -21,12 +23,15 @@ import
   ]
 
 type
+  OutputMode = enum
+    CSV, JSON
   Arguments = object
     apiKey: string
     url: string
     since: DateTime
     upto: DateTime
     outputDirFileCSV: string
+    mode: OutputMode
 
 const
   lineEnd = "\p"
@@ -76,6 +81,11 @@ proc setOpts() =
               args.upto = val.parse(dateFormat)
             except ValueError:
               helpQuit()
+          of "m", "mode", "outputMode":
+            try:
+              args.mode = parseEnum[OutputMode](val.toUpperAscii)
+            except ValueError:
+              args.mode = CSV
           of "h", "help":
             helpQuit()
       of cmdEnd: assert(false)
@@ -115,30 +125,45 @@ iterator fetchAllHeartbeats(dateStart, dateEnd: DateTime): JsonNode =
   for date in suru(dateRange):
     yield date.fetchHeartBeats
 
-proc run(dateFrom, dateTo: DateTime, outputLoc: string) =
-  var csvOut = newCSVTblWriter(outputLoc, @modelKeys)
+proc writeBeatsJSON(beats: JsonNode, outputLoc: string, mode: OutputMode) =
+  let fStream = outputLoc.newFileStream(fmAppend)
+  defer: fStream.close
+  for beat in beats:
+    fStream.writeLine beat
+
+proc writeBeatsCSV(csv: CSVTblWriter, beats: JsonNode, outputLoc: string, mode: OutputMode) =
+  for beat in beats:
+    let row = block:
+      let row = newTable[string, string]()
+      row["branch"] = beat{"branch"}.getStr
+      row["category"] = beat{"category"}.getStr
+      row["entity"] = beat{"entity"}.getStr
+      row["is_write"] = $beat{"is_write"}.getBool
+      row["language"] = beat{"language"}.getStr
+      row["project"] = beat{"project"}.getStr
+      row["time"] = $beat{"time"}.getInt
+      row["type"] = beat{"type"}.getStr
+      row["user_id"] = beat{"user_id"}.getStr
+      row["machine_name_id"] = beat{"machine_name_id"}.getStr
+      row["user_agent_id"] = beat{"user_agent_id"}.getStr
+      row["created_at"] = beat{"created_at"}.getStr
+      row
+    csv.writeRow(row)
+
+proc run(dateFrom, dateTo: DateTime, outputLoc: string, mode: OutputMode) =
   let (dateMin, dateMax) = fetchTotalRange(dateFrom, dateTo)
-  for beats in dateMin.fetchAllHeartbeats(dateMax):
-    for beat in beats:
-      let row = block:
-        let row = newTable[string, string]()
-        row["branch"] = beat{"branch"}.getStr
-        row["category"] = beat{"category"}.getStr
-        row["entity"] = beat{"entity"}.getStr
-        row["is_write"] = $beat{"is_write"}.getBool
-        row["language"] = beat{"language"}.getStr
-        row["project"] = beat{"project"}.getStr
-        row["time"] = $beat{"time"}.getInt
-        row["type"] = beat{"type"}.getStr
-        row["user_id"] = beat{"user_id"}.getStr
-        row["machine_name_id"] = beat{"machine_name_id"}.getStr
-        row["user_agent_id"] = beat{"user_agent_id"}.getStr
-        row["created_at"] = beat{"created_at"}.getStr
-        row
-      csvOut.writeRow(row)
+  case mode
+    of CSV:
+      var csv = newCSVTblWriter(outputLoc, @modelKeys)
+      defer: csv.close
+      for beats in dateMin.fetchAllHeartbeats(dateMax):
+        csv.writeBeatsCSV beats, outputLoc, mode
+    of JSON:
+      for beats in dateMin.fetchAllHeartbeats(dateMax):
+        writeBeatsJSON beats, outputLoc, mode
 
 when isMainModule:
   setOpts()
   let currentDate = now().format("yyyy-MM-dd'T'HH-mm-ss")
   discard args.outputDirFileCSV.existsOrCreateDir
-  run(args.since, args.upto, args.outputDirFileCSV / &"""out_{currentDate}.csv""")
+  run(args.since, args.upto, args.outputDirFileCSV / &"""out_{currentDate}.{toLowerAscii $args.mode}""", args.mode)
