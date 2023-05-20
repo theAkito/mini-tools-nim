@@ -1,6 +1,6 @@
 ##[
   Retrieve Wakapi Heartbeats
-  Translation of https://github.com/muety/wakapi/blob/1a6ee55d144574ef890d3de2825a9adac69a818e/scripts/download_heartbeats.py
+  Based on a translation of https://github.com/muety/wakapi/blob/1a6ee55d144574ef890d3de2825a9adac69a818e/scripts/download_heartbeats.py
 ]##
 
 import
@@ -8,13 +8,15 @@ import
     parseopt,
     strutils,
     strformat,
+    sequtils,
     enumutils,
     times,
     os,
     base64,
     json,
     sugar,
-    streams
+    streams,
+    tables
   ],
   pkg/[
     puppy,
@@ -134,20 +136,12 @@ proc writeBeatsJSON(beats: JsonNode, outputLoc: string, mode: OutputMode) =
 proc writeBeatsCSV(csv: CSVTblWriter, beats: JsonNode, outputLoc: string, mode: OutputMode) =
   for beat in beats:
     let row = block:
-      let row = newTable[string, string]()
-      row["branch"] = beat{"branch"}.getStr
-      row["category"] = beat{"category"}.getStr
-      row["entity"] = beat{"entity"}.getStr
-      row["is_write"] = $beat{"is_write"}.getBool
-      row["language"] = beat{"language"}.getStr
-      row["project"] = beat{"project"}.getStr
-      row["time"] = $beat{"time"}.getInt
-      row["type"] = beat{"type"}.getStr
-      row["user_id"] = beat{"user_id"}.getStr
-      row["machine_name_id"] = beat{"machine_name_id"}.getStr
-      row["user_agent_id"] = beat{"user_agent_id"}.getStr
-      row["created_at"] = beat{"created_at"}.getStr
-      row
+      let row = beat.getFields.pairs.toSeq.map do (keyToVal: tuple[k: string, v: JsonNode]) -> tuple[k: string, v: string]:
+        let v = case keyToVal.v.kind:
+          of JString: keyToVal.v.getStr
+          else: $keyToVal.v
+        (keyToVal.k, v)
+      newTable(row)
     csv.writeRow(row)
 
 proc run(dateFrom, dateTo: DateTime, outputLoc: string, mode: OutputMode) =
